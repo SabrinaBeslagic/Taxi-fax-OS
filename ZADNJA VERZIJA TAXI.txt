@@ -1,0 +1,207 @@
+admin_username="admin"
+admin_password="password"
+
+login() {
+  read -p "Korisničko ime: " username
+  read -p "Lozinka: " password
+  echo
+
+  if [[ $username == $admin_username && $password == $admin_password ]]; then
+    echo "Dobro došao admin."
+    menu
+  else
+    echo "Dobro došli."
+    user_menu
+  fi
+}
+
+menu() {
+  
+  echo "1. Dodavanje novog taksi vozila."
+  echo "2. Uređivanje informacija o taksi vozilima."
+  echo "3. Pregled informacija o vožnjama."
+  echo "4. Brisanje taksi vozila."
+  echo "5. Odjava."
+  read -p "Odaberite opciju: " option
+  echo
+
+  case $option in
+    1)
+      echo "Opcija 1: Dodavanje novog taksi vozila"
+      dodaj_taksi_vozilo
+      ;;
+    2)
+      echo "Opcija 2: Uređivanje informacija o taksi vozilima."
+      uredi_taksi_vozilo
+      ;;
+    3)
+      echo "Opcija 3: Pregled informacija o taksi vozilima."
+      pregled_informacija_o_voznjama
+      ;;
+    4)
+      echo "Opcija 4: Brisanje taksi vozila."
+      obrisi_taksi_vozilo
+      ;;
+    5)
+      echo "Hvala što ste koristili našu uslugu. Doviđenja!"
+      exit 0
+      ;;
+    *)
+      echo "Nepoznata opcija. Pokušajte ponovno."
+      ;;
+  esac
+
+  menu
+}
+
+dodaj_taksi_vozilo() {
+  echo "Dodavanje novog taksi vozila"
+  
+  
+  read -p "Unesite broj vozila: " broj_vozila
+  read -p "Unesite marku vozila: " marka
+  read -p "Unesite model vozila: " model
+  read -p "Unesite registarsku oznaku: " registarska_oznaka
+  read -p "Unesite trenutni status: " status
+  
+  echo "$broj_vozila;$marka;$model;$registarska_oznaka;$status" >> taxi_vozila.txt
+  
+  echo "Novo taksi vozilo je uspješno dodano u sustav!"
+}
+
+uredi_taksi_vozilo() {
+  echo "Uređivanje informacija o taksi vozilu"
+  
+
+  read -p "Unesite broj vozila koje želite urediti: " broj_vozila
+
+  grep -i "^$broj_vozila;" taxi_vozila.txt > temp.txt
+
+  if [[ -s temp.txt ]]; then
+    echo "Vozilo s brojem $broj_vozila pronađeno. Unesite nove informacije:"
+
+    read -p "Nova marka vozila: " nova_marka
+    read -p "Novi model vozila: " novi_model
+    read -p "Nova registarska oznaka: " nova_registarska
+    read -p "Novi status: " novi_status
+
+    sed -i "s/^$broj_vozila;.*/$broj_vozila;$nova_marka;$novi_model;$nova_registarska;$novi_status/" taxi_vozila.txt
+
+    echo "Informacije o taksi vozilu su uspješno ažurirane!"
+  else
+    echo "Vozilo s brojem $broj_vozila nije pronađeno."
+  fi
+
+  rm temp.txt
+}
+
+pregled_informacija_o_voznjama() {
+  echo "Pregled informacija o vožnjama:"
+
+  
+  if [[ -f "informacije_o_voznjama.txt" ]]; then
+   
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      echo "Polazište: $(echo $line | cut -d ',' -f 1)"
+      echo "Odredište: $(echo $line | cut -d ',' -f 2)"
+      echo "Vozač: $(echo $line | cut -d ',' -f 3)"
+      echo "Broj putnika: $(echo $line | cut -d ',' -f 4)"
+      echo "Cijena vožnje: $(echo $line | cut -d ',' -f 5)"
+      
+    done < informacije_o_voznjama.txt
+  else
+    echo "Nema dostupnih informacija o vožnjama."
+  fi
+}
+
+obrisi_taksi_vozilo() {
+  echo "Brisanje taksi vozila iz sustava"
+  
+
+  read -p "Unesite broj vozila koje želite obrisati: " broj_vozila
+
+  grep -i "^$broj_vozila;" taxi_vozila.txt > temp.txt
+
+  if [[ -s temp.txt ]]; then
+    sed -i "/^$broj_vozila;/d" taxi_vozila.txt
+    echo "Taksi vozilo s brojem $broj_vozila je uspješno obrisano iz sistema!"
+  else
+    echo "Taksi vozilo s brojem $broj_vozila nije pronađeno."
+  fi
+
+  rm temp.txt
+}
+
+user_menu() {
+  while :
+      do
+  echo "1. Rezervacija taksi vozila."
+  echo "2. Pregled informacija o vožnjama."
+  echo "3. Odjava."
+  read -p "Odaberite opciju: " option
+  echo
+
+  case $option in
+    
+    1)
+      echo "Rezervacija taksi vozila."
+      rezervacija_taksi_vozila() {
+   echo "Unesite polazište:"
+    read polaziste
+
+    echo "Unesite odredište:"
+    read odrediste
+
+    echo "Unesite vrijeme vožnje:"
+    read vrijeme
+
+    echo "Unesite broj putnika:"
+    read broj_putnika
+
+    echo "Dostupna taksi vozila:"
+    while IFS= read -r line || [[ -n "$line" ]]; do
+       
+        if [[ "$line" == *"$polaziste"* && "$line" == *"$odrediste"* ]]; then
+            echo "$line"
+        fi
+    done < taxi_vozila.txt
+
+    echo "Unesite broj taksi vozila za rezervaciju:"
+    read odabrano_vozilo
+
+    
+    echo "Polazište: $polaziste" >> informacije_o_voznjama.txt
+    echo "Odredište: $odrediste" >> informacije_o_voznjama.txt
+    echo "Vrijeme vožnje: $vrijeme" >> informacije_o_voznjama.txt
+    echo "Broj putnika: $broj_putnika" >> informacije_o_voznjama.txt
+    echo "Odabrano vozilo: $odabrano_vozilo" >> informacije_o_voznjama.txt
+
+    echo "Rezervacija taksi vozila $odabrano_vozilo je uspješno izvršena!"
+}
+      rezervacija_taksi_vozila
+      ;;
+    2)
+      echo "Pregled informacija o vožnjama."
+      pregled_informacija_o_voznjama() {
+    echo "Unesite korisničko ime:"
+    read korisnicko_ime
+
+   
+    grep -i "$korisnicko_ime" informacije_o_voznjama.txt
+ }   
+     
+      ;;
+    3)
+      echo "Hvala što ste koristili našu uslugu. Doviđenja!"
+      exit 0
+      ;;
+    *)
+      echo "Nepoznata opcija. Molimo pokušajte ponovno."
+      user_menu
+      ;;
+  esac
+  done
+}
+
+login
+
